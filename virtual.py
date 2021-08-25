@@ -168,10 +168,7 @@ if __name__=='__main__':
             #closes all the window that might be opened while this process
             cv2.destroyAllWindows()
 
-        elif 'search'  in statement:
-            statement = statement.replace("search", "")
-            webbrowser.open_new_tab(statement)
-            time.sleep(5)
+
 
         elif 'ask' in statement:
             speak('I can answer to computational and geographical questions and what question do you want to ask now')
