@@ -168,6 +168,21 @@ if __name__=='__main__':
             #closes all the window that might be opened while this process
             cv2.destroyAllWindows()
 
+        elif 'search'  in statement:
+            statement = statement.replace("search", "")
+            webbrowser.open_new_tab(statement)
+            time.sleep(5)
+
+        elif 'ask' in statement:
+            speak('I can answer to computational and geographical questions and what question do you want to ask now')
+            question=takeCommand()
+            app_id="U8JWA4-76TALW5R9Y"
+            client = wolframalpha.Client('U8JWA4-76TALW5R9Y')
+            res = client.query(question)
+            answer = next(res.results).text
+            speak(answer)
+            print(answer)
+
 
         elif "log off" in statement or "sign out" in statement:
             speak("Ok , your pc will log off in 10 sec make sure you exit from all applications")
