@@ -167,6 +167,11 @@ if __name__=='__main__':
             videoCaptureObject.release()
             #closes all the window that might be opened while this process
             cv2.destroyAllWindows()
+            
+        elif 'search'  in statement:
+            statement = statement.replace("search", "")
+            webbrowser.open_new_tab(statement)
+            time.sleep(5)
 
 
 
