@@ -1,203 +1,157 @@
-import speech_recognition as sr
 import pyttsx3
-import datetime
+import speech_recognition as sr
+import datetime as dt
+import os
+import cv2
+import random
+from requests import get 
 import wikipedia
 import webbrowser
-import os
-import time
-import subprocess
-import cv2
-import wolframalpha
-import json
-import requests
-import random
+import pywhatkit
+import smtplib
+import sys
 
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+#print(voices[1].id)
+engine.setProperty('voice',voices[0].id)
 
-print('Loading your AI personal assistant - G One')
-
-engine=pyttsx3.init('sapi5')
-voices=engine.getProperty('voices')
-engine.setProperty('voice','voices[0].id')
-
-
-def speak(text):
-    engine.say(text)
+#text to speech
+def speak(audio):
+    engine.say(audio)
+    print(audio)
     engine.runAndWait()
 
-def wishMe():
-    hour=datetime.datetime.now().hour
-    if hour>=0 and hour<12:
-        speak("Hello,Good Morning")
-        print("Hello,Good Morning")
-    elif hour>=12 and hour<18:
-        speak("Hello,Good Afternoon")
-        print("Hello,Good Afternoon")
-    else:
-        speak("Hello,Good Evening")
-        print("Hello,Good Evening")
-
-def takeCommand():
-    r=sr.Recognizer()
+def take_command():
+    r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Listening...")
-        audio=r.listen(source,timeout = 1)
+        print("Listening....")
+        r.pause_threshold = 1
+        audio = r.listen(source, timeout=1, phrase_time_limit=5)
 
-        try:
-            statement=r.recognize_google(audio,language='en-in')
-            print(f"user said:{statement}\n")
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User Said: {query}")
+    
+    except Exception as e:
+        speak("say that again please...")
+        return take_command()
+    return query
 
-        except Exception as e:
-            speak("Pardon me, please say that again")
-            return "None"
-        return statement
+#voice to text
+def wish():
+    hour = int(dt.datetime.now().hour)
 
-speak("Loading your AI personal assistant G-One")
-wishMe()
+    if hour>=0 and hour<=12:
+        speak("Good Morning")
+    elif hour>=12 and hour<=16:
+        speak("Good Afternoon")
+    else:
+        speak("Good Evening")
+    #speak("I am Arva, please tell me how can I help you?")
+    gender = speak("Do you want to talk to Arva or Vishti?") 
+    
 
+def sendEmail(to,content):
+    smtpserver = smtplib.SMTP('smtp.gmail.com',587)
+    smtpserver.ehlo()
+    smtpserver.starttls()
+    smtpserver.login("your email id","password")
+    smtpserver.sendmail('your email id',to,content)
+    smtpserver.close()
 
-if __name__=='__main__':
+def remove(str):
+    return str.replace(" ", "")
 
+if __name__ == "__main__":
+        #speak("Hello I am Jarvis")
+        #take_command()
+        wish()
 
-    while True:
-        speak("Tell me how can I help you now?")
-        statement = takeCommand().lower()
-        if statement==0:
-            continue
+        while True:
+            query = take_command().lower()
 
-        if "good bye" in statement or "ok bye" in statement or "stop" in statement:
-            speak('your personal assistant G-one is shutting down,Good bye')
-            print('your personal assistant G-one is shutting down,Good bye')
-            break
+            if "yes" in query:
+                engine.setProperty('voice',voices[1].id)
 
+            if "open notepad" in query:
+                npath = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Accessories\\notepad"
+                os.startfile(npath)
 
+            elif "open command prompt" in query:
+                os.system("start cmd")
 
-        if 'wikipedia' in statement:
-            speak('Searching Wikipedia...')
-            statement =statement.replace("wikipedia", "")
-            results = wikipedia.summary(statement, sentences=3)
-            speak("According to Wikipedia")
-            print(results)
-            speak(results)
+            elif "open camera" in query:
+                cap = cv2.VideoCapture(0)
+                while True:
+                    ret, img = cap.read()
+                    cv2.imshow('webcam',img)
+                    k = cv2.waitKey(50)
+                    if k==27:
+                        break
+                cap.release()
+                cv2.destroyAllWindows()
 
-        elif 'open youtube' in statement:
-            webbrowser.open_new_tab("https://www.youtube.com")
-            speak("youtube is open now")
-            time.sleep(5)
+            elif "play music" in query:
+                music_dir = "D:\\songs"
+                songs = os.listdir(music_dir)
+                #rd = random.choice(songs)
+                for song in songs:
+                    if song.endswith('.mp3'):
+                        os.startfile(os.path.join(music_dir,song))
 
-        elif 'open google' in statement:
-            webbrowser.open_new_tab("https://www.google.com")
-            speak("Google chrome is open now")
-            time.sleep(5)
+            elif "ip address" in query:
+                ip = get('https://api.ipify.org').text
+                speak(f"Your IP address is {ip}")
 
-        elif 'open gmail' in statement:
-            webbrowser.open_new_tab("gmail.com")
-            speak("Google Mail open now")
-            time.sleep(5)
+            elif "wikipedia" in query:
+                speak("Searching Wikipedia...")
+                query = query.replace("wikipedia","")
+                results = wikipedia.summary(query,sentences=5)
+                speak("According to wikipedia,")
+                speak(results)
+                #print(results)
 
-        elif "weather" in statement:
-            api_key="2c0515faa09dbecd2242879243677515"
-            base_url="https://api.openweathermap.org/data/2.5/weather?"
-            speak("whats the city name")
-            city_name=takeCommand()
-            complete_url=base_url+"appid="+api_key+"&q="+city_name
-            response = requests.get(complete_url)
-            x=response.json()
-            if x["cod"]!="404":
-                y=x["main"]
-                current_temperature = y["temp"]
-                current_humidiy = y["humidity"]
-                z = x["weather"]
-                weather_description = z[0]["description"]
-                speak(" Temperature in kelvin unit is " +
-                      str(current_temperature) +
-                      "\n humidity in percentage is " +
-                      str(current_humidiy) +
-                      "\n description  " +
-                      str(weather_description))
-                print(" Temperature in kelvin unit = " +
-                      str(current_temperature) +
-                      "\n humidity (in percentage) = " +
-                      str(current_humidiy) +
-                      "\n description = " +
-                      str(weather_description))
+            elif "open youtube" in query:
+                webbrowser.open("www.youtube.com")
 
-            else:
-                speak(" City Not Found ")
+            elif "open facebook" in query:
+                webbrowser.open("www.facebook.com")
 
+            elif "open google" in query:
+                speak("What should I search on google for you?")
+                cm = take_command().lower()
+                webbrowser.open(f"{cm}")
 
+            elif "send message" in query:
+                pywhatkit.sendwhatmsg("+919723904389","hello how are you",20,10)
 
-        elif 'time' in statement:
-            strTime=datetime.datetime.now().strftime("%H:%M:%S")
-            speak(f"the time is {strTime}")
+            elif "play a song on youtube" in query:
+                pywhatkit.playonyt("mein tumhara")
 
-        elif 'who are you' in statement or 'what can you do' in statement:
-            speak('I am G-one version 1 point O your persoanl assistant. I am programmed to minor tasks like'
-                  'opening youtube,google chrome,gmail and stackoverflow ,predict time,take a photo,search wikipedia,predict weather' 
-                  'in different cities , get top headline news from times of india and you can ask me computational or geographical questions too!')
+            elif "send email" in query:
+                try:
+                    speak("Whom should I send?")
+                    id = take_command().lower() + '@gmail.com'
+                    to = remove(id)
+                    print(to)
+                    speak("Do you want to send email to " + to)
+                    userResponse = take_command().lower()
+                    print(userResponse)
+                    if userResponse == "yes":
+                        speak("What should I send?")
+                        content = take_command().lower()
+                        sendEmail(to, content)
+                        speak("Email has been sent to " + to)
+                    else:
+                        speak("Okay... So i'll not send any email")
 
+                except Exception as e:
+                    print(e)
 
-        elif "who made you" in statement or "who created you" in statement or "who discovered you" in statement:
-            speak("I was built by Mirthula")
-            print("I was built by Mirthula")
+            elif "no" in query:
+                speak("Thank you for using me, have a great day ahead...")                
+                sys.exit()
 
-        elif "open stackoverflow" in statement:
-            webbrowser.open_new_tab("https://stackoverflow.com/login")
-            speak("Here is stackoverflow")
-
-        elif 'news' in statement:
-            news = webbrowser.open_new_tab("https://timesofindia.indiatimes.com/home/headlines")
-            speak('Here are some headlines from the Times of India,Happy reading')
-            time.sleep(6)
-
-        elif "camera" in statement or "take a photo" in statement:
-            number = random.randint(0,100)
-            #initializing cv2
-            videoCaptureObject = cv2.VideoCapture(0)
-            result = True
-            while(result):
-                #read the frames while the camera is on- it will return a boolean value 
-                ret,frame = videoCaptureObject.read()
-                #cv2.imwrite() method is used to save an image to any storage device
-                img_name = "img"+str(number)+".png"
-                cv2.imwrite(img_name, frame)
-                start_time = time.time
-                result = False
-            print("Snapshot taken")
-            # releases the camera
-            videoCaptureObject.release()
-            #closes all the window that might be opened while this process
-            cv2.destroyAllWindows()
-
-        elif 'search'  in statement:
-            statement = statement.replace("search", "")
-            webbrowser.open_new_tab(statement)
-            time.sleep(5)
-
-        elif 'ask' in statement:
-            speak('I can answer to computational and geographical questions and what question do you want to ask now')
-            question=takeCommand()
-            app_id="U8JWA4-76TALW5R9Y"
-            client = wolframalpha.Client('U8JWA4-76TALW5R9Y')
-            res = client.query(question)
-            answer = next(res.results).text
-            speak(answer)
-            print(answer)
-
-
-        elif "log off" in statement or "sign out" in statement:
-            speak("Ok , your pc will log off in 10 sec make sure you exit from all applications")
-            subprocess.call(["shutdown", "/l"])
-
-time.sleep(3)
-
-
-
-
-
-
-
-
-
-
-
-
+            speak("Do you have any other work?")
