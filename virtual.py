@@ -11,6 +11,13 @@ import pywhatkit
 import smtplib
 import sys
 import time
+############
+import requests 
+from bs4 import BeautifulSoup
+#################
+import pywikihow
+from pywikihow import search_wikihow
+from pywikihow import WikiHow
 
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
@@ -28,7 +35,7 @@ def take_command():
     with sr.Microphone() as source:
         print("Listening....")
         r.pause_threshold = 1
-        audio = r.listen(source, timeout=1, phrase_time_limit=5)
+        audio = r.listen(source, timeout=1, phrase_time_limit=7)
 
     try:
         print("Recognizing...")
@@ -51,7 +58,7 @@ def wish():
     else:
         speak("Good Evening")
     #speak("I am Arva, please tell me how can I help you?")
-    gender = speak("Do you want to talk to Arva or Vishti?") 
+    #gender = speak("Do you want to talk to Arva or Vishti?") 
     
 
 def sendEmail(to,content):
@@ -64,6 +71,9 @@ def sendEmail(to,content):
 
 def remove(str):
     return str.replace(" ", "")
+
+def search_wikihow(query, max_results = 10, lang="en"):
+    return list(WikiHow.search(query,max_results,lang))
 
 if __name__ == "__main__":
         #speak("Hello I am Jarvis")
@@ -132,13 +142,32 @@ if __name__ == "__main__":
                 speak("What should I search on google for you?")
                 cm = take_command().lower()
                 webbrowser.open(f"{cm}")
-
+    ###################################################################################3
             elif "send message" in query:
-                pywhatkit.sendwhatmsg("+919723904389","hello how are you",20,10)
-
+                speak("ok, please tell me the mobile number")
+                num = '+91'
+                num = num + take_command()
+                #audio = r.listen(source, timeout=1, phrase_time_limit=15)
+                speak(f"Do you confirm the number is {num}")
+                userResponse = take_command().lower()
+                if userResponse == "yes":
+                    now = dt.datetime.now()
+                    hour = now.hour 
+                    minute = now.minute + 3 
+                    pywhatkit.sendwhatmsg(num,"hello how are you",hour,minute)
+                    speak("Meassage Sent")
+                    sys.exit()
+                else:
+                    speak("Ok, I will not send the message")
+                    sys.exit()
+################################################################################3
             elif "play a song on youtube" in query:
-                pywhatkit.playonyt("mein tumhara")
-
+                speak("which song would you like me to play?")
+                song = take_command()
+                speak(f'playing {song} for you')
+                pywhatkit.playonyt(song)
+                sys.exit()
+##############################################################################33
             elif "send email" in query:
                 try:
                     speak("Whom should I send?")
@@ -155,9 +184,30 @@ if __name__ == "__main__":
                         speak("Email has been sent to " + to)
                     else:
                         speak("Okay... So i'll not send any email")
-
                 except Exception as e:
                     print(e)
+            ################################################################
+
+            elif "temperature" in query:
+                search = "Temperature in Mumbai"
+                url = f'https://www.google.com/search?q={search}'
+                r = requests.get(url)
+                data = BeautifulSoup(r.text,"html.parser")
+                temp = data.find("div",class_="BNeawe").text
+                speak(f"Current {search} is {temp}")
+
+            ###################################################################
+
+            elif "activate search mode" in query:
+                speak("Plase tell me what do you want to search")
+                how = take_command()
+                max_results=1
+                how_to = search_wikihow(how,max_results)
+                assert len(how_to) == 1
+                how_to[0].print()
+                speak(how_to[0].summary)
+
+            ######################################################################
 
             elif "no" in query:
                 speak("Thank you for using me, have a great day ahead...")                
